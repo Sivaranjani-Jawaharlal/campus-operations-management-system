@@ -37,6 +37,8 @@ public class SecurityConfiguration {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedEntryPoint()))
                 .authorizeHttpRequests(authorize->authorize
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/invitations/accept").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session->session

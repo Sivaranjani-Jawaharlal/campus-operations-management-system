@@ -6,6 +6,7 @@ import com.example.demo.dto.VerifyUserDto;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import jakarta.mail.MessagingException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthenticationService {
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -79,6 +83,7 @@ public class AuthenticationService {
         // ✅ 7. Brand new user - create account
         User user = new User();
         user.setDisplayUsername(input.getUsername());
+        user.setRole(com.example.demo.model.Role.STUDENT);
         user.setEmail(input.getEmail());
         user.setPassword(passwordEncoder.encode(input.getPassword()));
         user.setVerificationCode(generateVerificationCode());
@@ -159,25 +164,11 @@ public class AuthenticationService {
         if (requests >= MAX_VERIFICATION_REQUESTS_PER_HOUR) {
             throw new RuntimeException("Too many verification requests. Please try again later.");
         }
-
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-
-        if (optionalUser.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-
-        User user = optionalUser.get();
-
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         if (user.isEnabled()) {
             throw new RuntimeException("Account is already verified");
         }
-
-        // ✅ Check if code is still valid
-        if (user.getVerificationCodeExpiresAt().isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Current verification code is still valid. Please check your email.");
-        }
-
-        // ✅ Reset attempts when resending
         user.setVerificationAttempts(0);
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(
@@ -240,7 +231,8 @@ public class AuthenticationService {
             user.setResetPasswordTokenExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES));
             userRepository.save(user);
 
-            String resetLink = "http://localhost:5173/reset-password?token=" + token;
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            // ...rest unchanged
             String html = "<p>Click the link below to reset your password (valid for 15 minutes):</p>"
                     + "<p><a href=\"" + resetLink + "\">" + resetLink + "</a></p>";
 
