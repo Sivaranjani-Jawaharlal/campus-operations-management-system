@@ -5,12 +5,11 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 
 export const SignupPage = () => {
-
-  const {user, checkAuth} = useAuth();
+  const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
   useEffect(() => {
     if (user) {
-      navigate('/home', {replace: true});
+      navigate("/home", { replace: true });
     }
   }, [user]);
 
@@ -21,6 +20,8 @@ export const SignupPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rollNumber, setRollNumber] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -40,7 +41,13 @@ export const SignupPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          rollNumber,
+          dateOfBirth,
+        }),
         credentials: "include",
       });
 
@@ -63,6 +70,11 @@ export const SignupPage = () => {
           setError(
             "A verification code was already sent to your email. Please check your inbox or wait 15 minutes."
           );
+        } else if (
+          data.includes("couldn't verify") ||
+          data.includes("already been created")
+        ) {
+          setError(data);
         } else {
           setError(data || "Signup failed. Please try again.");
         }
@@ -194,6 +206,45 @@ export const SignupPage = () => {
               fontSize: "16px",
             }}
             required
+          />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
+            Roll Number
+          </label>
+          <input
+            type="text"
+            value={rollNumber}
+            onChange={(e) => setRollNumber(e.target.value)}
+            placeholder="Enter your roll number"
+            required
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 4,
+              border: "1px solid #ccc",
+              fontSize: "16px",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
+            Date of Birth
+          </label>
+          <input
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 4,
+              border: "1px solid #ccc",
+              fontSize: "16px",
+            }}
           />
         </div>
 

@@ -14,7 +14,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.demo.model.EligibleStudent;
+import com.example.demo.model.Role;
+import com.example.demo.repository.EligibleStudentRepository;
+import java.time.LocalDate;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -31,6 +34,8 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final EligibleStudentRepository eligibleStudentRepository;
+
 
     // Constants
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -38,63 +43,82 @@ public class AuthenticationService {
     // ✅ Rate limiting for verification requests
     private final Map<String, Integer> verificationRequestCount = new ConcurrentHashMap<>();
     private static final int MAX_VERIFICATION_REQUESTS_PER_HOUR = 5;
+    private final Map<String, Integer> signupAttemptCount = new ConcurrentHashMap<>();
+    private static final int MAX_SIGNUP_ATTEMPTS_PER_HOUR = 5;
+
 
     public AuthenticationService(UserRepository userRepository,
+                                 EligibleStudentRepository eligibleStudentRepository,
                                  AuthenticationManager authenticationManager,
                                  PasswordEncoder passwordEncoder,
                                  EmailService emailService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
+        this.eligibleStudentRepository = eligibleStudentRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
     }
 
     @Transactional
     public User signup(RegisterUserDto input) {
-        // ✅ 1. Check if email is already registered (verified OR unverified)
-        Optional<User> existing = userRepository.findByEmail(input.getEmail());
+        // 0. Verify against the admin-uploaded eligible list BEFORE anything
+        // else — role/department/academicYear come from this record, never
+        // from the request body.
+        EligibleStudent eligible = validateEligibility(input.getRollNumber(), input.getDateOfBirth());
 
-        if (existing.isPresent()) {
-            User existingUser = existing.get();
+        // ... existing "check if email already registered" block stays exactly
+        // as it is ...
 
-            // ✅ 2. If account is verified, reject signup
-            if (existingUser.isEnabled()) {
-                throw new RuntimeException("An account with this email already exists. Please log in.");
-            }
-
-            // ✅ 3. If unverified, check if verification code expired
-            if (existingUser.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-                // ✅ 4. Code expired - generate new code and resend
-                existingUser.setVerificationCode(generateVerificationCode());
-                existingUser.setVerificationCodeExpiresAt(
-                        LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)
-                );
-                // ✅ 5. IMPORTANT: DO NOT change password for existing unverified user
-                // Keep the original password hash
-                sendVerificationEmail(existingUser);
-                return userRepository.save(existingUser);
-            } else {
-                // ✅ 6. Code still valid - just resend the same code
-                sendVerificationEmail(existingUser);
-                throw new RuntimeException("A verification code was already sent. Please check your email or wait for it to expire.");
-            }
-        }
-
-        // ✅ 7. Brand new user - create account
+        // In the "brand new user" branch at the bottom, replace the role line:
         User user = new User();
         user.setDisplayUsername(input.getUsername());
-        user.setRole(com.example.demo.model.Role.STUDENT);
         user.setEmail(input.getEmail());
         user.setPassword(passwordEncoder.encode(input.getPassword()));
+        user.setRole(Role.STUDENT);
+        user.setDepartment(eligible.getDepartment());
+        user.setAcademicYear(eligible.getAcademicYear());
         user.setVerificationCode(generateVerificationCode());
-        user.setVerificationCodeExpiresAt(
-                LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)
-        );
+        user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES));
         user.setEnabled(false);
-        user.setVerificationAttempts(0); // Track attempts
+        user.setVerificationAttempts(0);
 
         sendVerificationEmail(user);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Mark the roll number consumed only after the save succeeds, so a
+        // failed save doesn't lock out a real student from retrying.
+        eligible.setUsedForSignup(true);
+        eligibleStudentRepository.save(eligible);
+
+        return savedUser;
+    }
+
+    private EligibleStudent validateEligibility(String rollNumber, LocalDate dateOfBirth) {
+        if (rollNumber == null || rollNumber.isBlank() || dateOfBirth == null) {
+            throw new RuntimeException("Roll number and date of birth are required.");
+        }
+
+        int attempts = signupAttemptCount.getOrDefault(rollNumber, 0);
+        if (attempts >= MAX_SIGNUP_ATTEMPTS_PER_HOUR) {
+            throw new RuntimeException("Too many attempts for this roll number. Please try again later or contact an administrator.");
+        }
+
+        Optional<EligibleStudent> eligibleOpt = eligibleStudentRepository.findByRollNumber(rollNumber);
+
+        // Same generic message whether the roll number doesn't exist or the DOB
+        // doesn't match, so this endpoint can't be used to fish for valid roll
+        // numbers.
+        if (eligibleOpt.isEmpty() || !eligibleOpt.get().getDateOfBirth().equals(dateOfBirth)) {
+            signupAttemptCount.put(rollNumber, attempts + 1);
+            throw new RuntimeException("We couldn't verify your roll number and date of birth. Please check your details or contact an administrator.");
+        }
+
+        EligibleStudent eligible = eligibleOpt.get();
+        if (eligible.isUsedForSignup()) {
+            throw new RuntimeException("An account has already been created for this roll number.");
+        }
+
+        return eligible;
     }
 
     public User authenticate(LoginUserDto input) {
@@ -183,6 +207,7 @@ public class AuthenticationService {
     @Scheduled(fixedRate = 3600000) // Every hour
     public void resetVerificationCounts() {
         verificationRequestCount.clear();
+        signupAttemptCount.clear();
     }
 
     private void sendVerificationEmail(User user) {
