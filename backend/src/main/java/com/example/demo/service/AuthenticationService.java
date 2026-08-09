@@ -61,15 +61,44 @@ public class AuthenticationService {
 
     @Transactional
     public User signup(RegisterUserDto input) {
-        // 0. Verify against the admin-uploaded eligible list BEFORE anything
-        // else — role/department/academicYear come from this record, never
-        // from the request body.
+        // 1. Check if email is already registered (verified OR unverified)
+        // FIRST -- this must come before the eligibility check below, or a
+        // legitimate student retrying to resend their verification code
+        // would get rejected with "roll number already used" (since their
+        // own first successful signup already flipped usedForSignup=true).
+        Optional<User> existing = userRepository.findByEmail(input.getEmail());
+
+        if (existing.isPresent()) {
+            User existingUser = existing.get();
+
+            // 2. If account is verified, reject signup
+            if (existingUser.isEnabled()) {
+                throw new RuntimeException("An account with this email already exists. Please log in.");
+            }
+
+            // 3. If unverified, check if verification code expired
+            if (existingUser.getVerificationCodeExpiresAt() == null
+                    || existingUser.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
+                // 4. Code expired - generate new code and resend
+                existingUser.setVerificationCode(generateVerificationCode());
+                existingUser.setVerificationCodeExpiresAt(
+                        LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)
+                );
+                // 5. IMPORTANT: do NOT change password for existing unverified user
+                sendVerificationEmail(existingUser);
+                return userRepository.save(existingUser);
+            } else {
+                // 6. Code still valid - just resend the same code
+                sendVerificationEmail(existingUser);
+                throw new RuntimeException("A verification code was already sent. Please check your email or wait for it to expire.");
+            }
+        }
+
+        // 7. Brand new user - verify against the admin-uploaded eligible
+        // list, then create the account using that record's authoritative
+        // data (role/department/academicYear never come from the request).
         EligibleStudent eligible = validateEligibility(input.getRollNumber(), input.getDateOfBirth());
 
-        // ... existing "check if email already registered" block stays exactly
-        // as it is ...
-
-        // In the "brand new user" branch at the bottom, replace the role line:
         User user = new User();
         user.setDisplayUsername(input.getUsername());
         user.setEmail(input.getEmail());
@@ -92,7 +121,6 @@ public class AuthenticationService {
 
         return savedUser;
     }
-
     private EligibleStudent validateEligibility(String rollNumber, LocalDate dateOfBirth) {
         if (rollNumber == null || rollNumber.isBlank() || dateOfBirth == null) {
             throw new RuntimeException("Roll number and date of birth are required.");
