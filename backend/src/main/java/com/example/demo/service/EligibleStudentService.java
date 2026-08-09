@@ -18,7 +18,10 @@ import java.util.List;
 @Service
 public class EligibleStudentService {
 
-    private static final int EXPECTED_COLUMNS = 5;
+    // Expected header (order matters, case-insensitive):
+    // rollNumber,name,email,dateOfBirth,department,academicYear
+    // dateOfBirth must be ISO format: yyyy-MM-dd
+    private static final int EXPECTED_COLUMNS = 6;
     private final EligibleStudentRepository eligibleStudentRepository;
 
     public EligibleStudentService(EligibleStudentRepository eligibleStudentRepository) {
@@ -57,13 +60,18 @@ public class EligibleStudentService {
 
                 String rollNumber = cols[0].trim();
                 String name = cols[1].trim();
-                String dobRaw = cols[2].trim();
-                String department = cols[3].trim();
-                String academicYear = cols[4].trim();
+                String email = cols[2].trim();
+                String dobRaw = cols[3].trim();
+                String department = cols[4].trim();
+                String academicYear = cols[5].trim();
 
-                if (rollNumber.isEmpty() || name.isEmpty() || dobRaw.isEmpty()
+                if (rollNumber.isEmpty() || name.isEmpty() || email.isEmpty() || dobRaw.isEmpty()
                         || department.isEmpty() || academicYear.isEmpty()) {
                     rowErrors.add("Row " + rowNumber + ": all columns are required.");
+                    continue;
+                }
+                if (!email.contains("@")) {
+                    rowErrors.add("Row " + rowNumber + ": '" + email + "' doesn't look like a valid email.");
                     continue;
                 }
 
@@ -81,7 +89,7 @@ public class EligibleStudentService {
                 }
 
                 eligibleStudentRepository.save(
-                        new EligibleStudent(rollNumber, name, dateOfBirth, department, academicYear)
+                        new EligibleStudent(rollNumber, name, dateOfBirth, email, department, academicYear)
                 );
                 created++;
             }

@@ -97,7 +97,7 @@ public class AuthenticationService {
         // 7. Brand new user - verify against the admin-uploaded eligible
         // list, then create the account using that record's authoritative
         // data (role/department/academicYear never come from the request).
-        EligibleStudent eligible = validateEligibility(input.getRollNumber(), input.getDateOfBirth());
+        EligibleStudent eligible = validateEligibility(input.getRollNumber(), input.getDateOfBirth(), input.getEmail());
 
         User user = new User();
         user.setDisplayUsername(input.getUsername());
@@ -121,9 +121,9 @@ public class AuthenticationService {
 
         return savedUser;
     }
-    private EligibleStudent validateEligibility(String rollNumber, LocalDate dateOfBirth) {
-        if (rollNumber == null || rollNumber.isBlank() || dateOfBirth == null) {
-            throw new RuntimeException("Roll number and date of birth are required.");
+    private EligibleStudent validateEligibility(String rollNumber, LocalDate dateOfBirth, String email) {
+        if (rollNumber == null || rollNumber.isBlank() || dateOfBirth == null || email == null || email.isBlank()) {
+            throw new RuntimeException("Roll number, date of birth, and email are required.");
         }
 
         int attempts = signupAttemptCount.getOrDefault(rollNumber, 0);
@@ -133,10 +133,15 @@ public class AuthenticationService {
 
         Optional<EligibleStudent> eligibleOpt = eligibleStudentRepository.findByRollNumber(rollNumber);
 
-        // Same generic message whether the roll number doesn't exist or the DOB
-        // doesn't match, so this endpoint can't be used to fish for valid roll
-        // numbers.
-        if (eligibleOpt.isEmpty() || !eligibleOpt.get().getDateOfBirth().equals(dateOfBirth)) {
+        // Same generic message for every mismatch (roll number not found, DOB
+        // wrong, OR email wrong) so this endpoint can't be used to fish for
+        // valid roll numbers -- and, critically, so someone who knows a real
+        // roll number + DOB can't sign up with an email that isn't the one on
+        // file, which would otherwise let them permanently consume that
+        // student's roll number and lock the real student out.
+        if (eligibleOpt.isEmpty()
+                || !eligibleOpt.get().getDateOfBirth().equals(dateOfBirth)
+                || !eligibleOpt.get().getEmail().equalsIgnoreCase(email)) {
             signupAttemptCount.put(rollNumber, attempts + 1);
             throw new RuntimeException("We couldn't verify your roll number and date of birth. Please check your details or contact an administrator.");
         }

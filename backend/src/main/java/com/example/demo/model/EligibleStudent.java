@@ -22,6 +22,9 @@ public class EligibleStudent {
     private LocalDate dateOfBirth;
 
     @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
     private String department;
 
     @Column(name = "academic_year", nullable = false)
@@ -34,10 +37,11 @@ public class EligibleStudent {
 
     }
 
-    public EligibleStudent(String rollNumber, String name, LocalDate dateOfBirth, String department, String academicYear) {
+    public EligibleStudent(String rollNumber, String name, LocalDate dateOfBirth, String email, String department, String academicYear) {
         this.rollNumber = rollNumber;
         this.name = name;
         this.dateOfBirth = dateOfBirth;
+        this.email=email;
         this.department = department;
         this.academicYear = academicYear;
     }
@@ -47,6 +51,8 @@ public class EligibleStudent {
     public void setRollNumber(String rollNumber) { this.rollNumber = rollNumber; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public String getDepartment() { return department; }

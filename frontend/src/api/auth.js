@@ -40,3 +40,7 @@ export async function forgotPassword(email) {
 export async function resetPassword({ token, newPassword }) {
   return apiRequest("/auth/reset-password", { method: "POST", body: { token, newPassword } });
 }
+
+export async function acceptInvitation({ token, password }) {
+  return apiRequest("/invitations/accept", { method: "POST", body: { token, password } });
+}
