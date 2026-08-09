@@ -66,6 +66,11 @@ public class AuthenticationService {
         // legitimate student retrying to resend their verification code
         // would get rejected with "roll number already used" (since their
         // own first successful signup already flipped usedForSignup=true).
+
+        if (userRepository.findByDisplayUsername(input.getUsername()).isPresent()) {
+            throw new RuntimeException("That username is already taken. Please choose another.");
+        }
+
         Optional<User> existing = userRepository.findByEmail(input.getEmail());
 
         if (existing.isPresent()) {

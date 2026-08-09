@@ -33,3 +33,24 @@ export async function uploadEligibleStudentsCsv(file) {
   }
   return data;
 }
+
+export function promoteStudents({ department, fromYear, toYear }) {
+  return apiRequest("/admin/users/promote", {
+    method: "POST",
+    body: { department, fromYear, toYear },
+  });
+}
+
+export function graduateStudents({ department, academicYear }) {
+  return apiRequest("/admin/users/graduate", {
+    method: "POST",
+    body: { department, academicYear },
+  });
+}
+
+export function updateAccountStatus(userId, status) {
+  return apiRequest(`/admin/users/${userId}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}

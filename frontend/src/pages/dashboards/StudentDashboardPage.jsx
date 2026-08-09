@@ -1,4 +1,5 @@
 import DashboardShell from "../../components/DashboardShell";
+import AnnouncementFeed from "../../components/AnnouncementFeed";
 import { useAuth } from "../../context/AuthContext";
 
 export const StudentDashboardPage = () => {
@@ -9,10 +10,8 @@ export const StudentDashboardPage = () => {
         Department: <strong>{user?.department}</strong> · Academic year:{" "}
         <strong>{user?.academicYear}</strong>
       </p>
-      <p style={{ color: "#888" }}>
-        Placeholder — add student-facing features here (course info, campus
-        services, etc.).
-      </p>
+      <h2>Announcements</h2>
+      <AnnouncementFeed canManage={false} />
     </DashboardShell>
   );
 };

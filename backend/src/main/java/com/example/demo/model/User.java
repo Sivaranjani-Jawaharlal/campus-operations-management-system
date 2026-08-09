@@ -67,6 +67,13 @@ public class User implements UserDetails {
 
     private String academicYear;
 
+    // Separate from `enabled` (email verification). Defaults to ACTIVE for
+    // every new account; admin actions flip this to INACTIVE on graduation
+    // (students) or departure (staff/lab assistants). See AccountStatus.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false)
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
     // ✅ Constructors
     public User(String username, String email, String password) {
         this.displayUsername = username;
@@ -89,8 +96,17 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        return List.of(new SimpleGrantedAuthority("ROLE_"+role.name()));
+        // Spring Security's hasRole("X") checks look for authority "ROLE_X" —
+        // this prefix is required, not optional.
+        List<GrantedAuthority> authorities = new java.util.ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        // Only ACTIVE accounts get this authority. Write endpoints require
+        // it explicitly (see SecurityConfiguration); its absence is what
+        // makes an INACTIVE account read-only, without touching login itself.
+        if (accountStatus == AccountStatus.ACTIVE) {
+            authorities.add(new SimpleGrantedAuthority("STATUS_ACTIVE"));
+        }
+        return authorities;
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -35,10 +36,25 @@ public class SecurityConfiguration {
                 .cors(cors->cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf-> csrf.disable())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedEntryPoint()))
-                .authorizeHttpRequests(authorize->authorize
+                // backend/src/main/java/com/example/demo/security/SecurityConfiguration.java
+                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/invitations/accept").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/announcements/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/announcements/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/announcements/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/announcements/**").hasAuthority("STATUS_ACTIVE")
+                        .requestMatchers(HttpMethod.PUT, "/announcements/**").hasAuthority("STATUS_ACTIVE")
+                        .requestMatchers(HttpMethod.DELETE, "/announcements/**").hasAuthority("STATUS_ACTIVE")
+                        // Catch-all: any inactive account is blocked from writing anywhere,
+                        // including endpoints that don't exist yet (Phase 3/4 lab overrides,
+                        // event registration, etc.) — you won't have to remember to add this
+                        // check to every future controller.
+                        .requestMatchers(HttpMethod.POST, "/**").hasAuthority("STATUS_ACTIVE")
+                        .requestMatchers(HttpMethod.PUT, "/**").hasAuthority("STATUS_ACTIVE")
+                        .requestMatchers(HttpMethod.PATCH, "/**").hasAuthority("STATUS_ACTIVE")
+                        .requestMatchers(HttpMethod.DELETE, "/**").hasAuthority("STATUS_ACTIVE")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session->session

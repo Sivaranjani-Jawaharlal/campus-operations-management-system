@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
+import { signup } from "../api/auth";
 
 export const SignupPage = () => {
   const { user, checkAuth } = useAuth();
@@ -36,51 +37,23 @@ export const SignupPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-          rollNumber,
-          dateOfBirth,
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.text();
-
-      if (response.ok) {
-        setSuccess(
-          "Account created! Please check your email for verification code."
+      await signup({ username, email, password, rollNumber, dateOfBirth });
+      setSuccess(
+        "Account created! Please check your email for verification code."
+      );
+      setTimeout(
+        () => navigate(`/verify?email=${encodeURIComponent(email)}`),
+        2000
+      );
+    } catch (err) {
+      const msg = err.message || "Signup failed. Please try again.";
+      if (msg.includes("already exists")) {
+        setError(
+          "An account with this email already exists. Please log in or reset your password."
         );
-        setTimeout(() => {
-          navigate(`/verify?email=${encodeURIComponent(email)}`);
-        }, 2000);
       } else {
-        // ✅ Display user-friendly error messages
-        if (data.includes("already exists")) {
-          setError(
-            "An account with this email already exists. Please log in or reset your password."
-          );
-        } else if (data.includes("verification code was already sent")) {
-          setError(
-            "A verification code was already sent to your email. Please check your inbox or wait 15 minutes."
-          );
-        } else if (
-          data.includes("couldn't verify") ||
-          data.includes("already been created")
-        ) {
-          setError(data);
-        } else {
-          setError(data || "Signup failed. Please try again.");
-        }
+        setError(msg);
       }
-    } catch (error) {
-      setError("Network error. Please check your connection.");
     } finally {
       setLoading(false);
     }

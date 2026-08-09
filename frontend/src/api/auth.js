@@ -1,12 +1,12 @@
 import { apiRequest } from "./client.js";
 
-export async function signup({email, password, username}){
-    return apiRequest("/auth/signup", {
-        method: "POST",
-        body: {email, password, username},
-    });
+// frontend/src/api/auth.js
+export async function signup({ email, password, username, rollNumber, dateOfBirth }) {
+  return apiRequest("/auth/signup", {
+    method: "POST",
+    body: { email, password, username, rollNumber, dateOfBirth },
+  });
 }
-
 export async function login({email, password}){
     return apiRequest("/auth/login", {
         method: "POST",
