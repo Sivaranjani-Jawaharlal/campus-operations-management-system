@@ -1,0 +1,197 @@
+/* ==========================================================================
+   Design tokens — "Campus Register"
+   Limestone paper · ivy green · brass · brick-red for danger.
+   Every colour, size and motion value used by the app comes from here.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Surfaces ---- */
+  --paper: #f4f1e8;
+  --paper-sunk: #ebe6d8;
+  --surface: #fbf9f3;
+  --surface-raised: #ffffff;
+  --overlay: rgba(17, 26, 21, 0.48);
+
+  /* ---- Ink (text) ---- */
+  --ink: #16201b;
+  --ink-soft: #46534c;
+  --ink-mute: #5f6c65;       /* >= 4.5:1 on paper and surface */
+  --ink-faint: #8a948d;      /* decorative only (placeholders, disabled) */
+  --ink-on-brand: #fbf9f3;
+
+  /* ---- Lines ---- */
+  --line: #ddd6c4;
+  --line-strong: #c4bba3;
+  --line-faint: #e8e2d2;
+
+  /* ---- Brand: ivy ---- */
+  --brand: #1f4d3f;
+  --brand-hover: #173d32;
+  --brand-press: #112f26;
+  --brand-soft: #e1ebe4;
+  --brand-softer: #eef4ef;
+  --brand-text: #1f4d3f;
+
+  /* ---- Accent: brass ---- */
+  --accent: #b5832a;
+  --accent-soft: #f3e8c9;
+  --accent-text: #7a561a;
+
+  /* ---- Semantic ---- */
+  --success: #2c7a4d;
+  --success-soft: #dff0e4;
+  --success-text: #1d5a37;
+  --warning: #b5832a;
+  --warning-soft: #f6ebc9;
+  --warning-text: #75531a;
+  --danger: #b3321f;
+  --danger-hover: #952615;
+  --danger-soft: #f6dcd5;
+  --danger-text: #8f2514;
+  --info: #3a5a7c;
+  --info-soft: #dde7f1;
+  --info-text: #2a4666;
+
+  /* ---- Role palette ---- */
+  --role-student: #3a5a7c;
+  --role-student-soft: #dde7f1;
+  --role-staff: #1f4d3f;
+  --role-staff-soft: #dcebe2;
+  --role-lab: #8a5f12;
+  --role-lab-soft: #f4e6c4;
+  --role-admin: #16201b;
+  --role-admin-soft: #e3dfd2;
+
+  /* ---- Sidebar (stays dark in both themes) ---- */
+  --side-bg: #12281f;
+  --side-bg-2: #183429;
+  --side-line: rgba(251, 249, 243, 0.1);
+  --side-text: #c9d6cd;
+  --side-text-strong: #fbf9f3;
+  --side-mute: #8da496;
+  --side-active-bg: rgba(251, 249, 243, 0.09);
+
+  /* ---- Typography ---- */
+  --font-display: "Fraunces Variable", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-body: "Instrument Sans Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.125rem;
+  --text-3xl: 2.875rem;
+
+  /* ---- Space (4px grid) ---- */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+
+  /* ---- Shape ---- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* ---- Elevation ---- */
+  --shadow-1: 0 1px 0 rgba(22, 32, 27, 0.04), 0 1px 2px rgba(22, 32, 27, 0.05);
+  --shadow-2: 0 1px 0 rgba(22, 32, 27, 0.04), 0 6px 16px -6px rgba(22, 32, 27, 0.14);
+  --shadow-3: 0 18px 44px -12px rgba(17, 26, 21, 0.3), 0 4px 10px rgba(17, 26, 21, 0.08);
+  --ring: 0 0 0 3px rgba(181, 131, 42, 0.38);
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 420ms;
+
+  /* ---- Layout ---- */
+  --side-w: 17.5rem;
+  --topbar-h: 3.75rem;
+  --content-max: 76rem;
+}
+
+/* ---- Dark theme ---- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #0e1512;
+  --paper-sunk: #0a100d;
+  --surface: #151e19;
+  --surface-raised: #1b2620;
+  --overlay: rgba(4, 8, 6, 0.66);
+
+  --ink: #ece8da;
+  --ink-soft: #bcc4bb;
+  --ink-mute: #98a49c;
+  --ink-faint: #66726b;
+  --ink-on-brand: #fbf9f3;
+
+  --line: #26332c;
+  --line-strong: #364640;
+  --line-faint: #1d2822;
+
+  --brand: #2f7a63;
+  --brand-hover: #3a8b72;
+  --brand-press: #266754;
+  --brand-soft: #1c3329;
+  --brand-softer: #172a22;
+  --brand-text: #7fc4aa;
+
+  --accent: #d1a24a;
+  --accent-soft: #35290f;
+  --accent-text: #e2bd75;
+
+  --success: #4aa872;
+  --success-soft: #16301f;
+  --success-text: #86d3a4;
+  --warning: #d1a24a;
+  --warning-soft: #33280f;
+  --warning-text: #e2bd75;
+  --danger: #d4553f;
+  --danger-hover: #e06a54;
+  --danger-soft: #3a1b16;
+  --danger-text: #f0a193;
+  --info: #7ea4cc;
+  --info-soft: #1a2837;
+  --info-text: #a9c6e4;
+
+  --role-student: #a9c6e4;
+  --role-student-soft: #1a2837;
+  --role-staff: #86d3a4;
+  --role-staff-soft: #16301f;
+  --role-lab: #e2bd75;
+  --role-lab-soft: #33280f;
+  --role-admin: #ece8da;
+  --role-admin-soft: #2a322d;
+
+  --side-bg: #0a120e;
+  --side-bg-2: #101b16;
+
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 1px 0 rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --shadow-3: 0 22px 50px -12px rgba(0, 0, 0, 0.7), 0 4px 10px rgba(0, 0, 0, 0.4);
+  --ring: 0 0 0 3px rgba(209, 162, 74, 0.45);
+}
+
+@media (max-width: 720px) {
+  :root {
+    --text-2xl: 1.75rem;
+    --text-3xl: 2.25rem;
+    --text-xl: 1.4rem;
+    --topbar-h: 3.5rem;
+  }
+}

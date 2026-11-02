@@ -1,28 +1,35 @@
-// frontend/src/pages/SignupPage.jsx
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useEffect } from "react";
-import { signup } from "../api/auth";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { CalendarDays, IdCard, Mail, User } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import AuthLayout from "../components/layout/AuthLayout";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
+import { PasswordField, TextField } from "../components/ui/Field";
 
 export const SignupPage = () => {
-  const { user, checkAuth } = useAuth();
+  useDocumentTitle("Create account");
+  const { user, signup } = useAuth();
   const navigate = useNavigate();
-  useEffect(() => {
-    if (user) {
-      navigate("/home", { replace: true });
-    }
-  }, [user]);
+  const timer = useRef(null);
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rollNumber, setRollNumber] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+
+  useEffect(() => {
+    if (user) navigate("/home", { replace: true });
+  }, [user, navigate]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -35,22 +42,14 @@ export const SignupPage = () => {
     }
 
     setLoading(true);
-
     try {
       await signup({ username, email, password, rollNumber, dateOfBirth });
-      setSuccess(
-        "Account created! Please check your email for verification code."
-      );
-      setTimeout(
-        () => navigate(`/verify?email=${encodeURIComponent(email)}`),
-        2000
-      );
+      setSuccess("Account created! Please check your email for the verification code.");
+      timer.current = setTimeout(() => navigate(`/verify?email=${encodeURIComponent(email)}`), 2000);
     } catch (err) {
       const msg = err.message || "Signup failed. Please try again.";
       if (msg.includes("already exists")) {
-        setError(
-          "An account with this email already exists. Please log in or reset your password."
-        );
+        setError("An account with this email already exists. Please log in or reset your password.");
       } else {
         setError(msg);
       }
@@ -58,212 +57,53 @@ export const SignupPage = () => {
       setLoading(false);
     }
   };
+
   return (
-    <div
-      style={{
-        maxWidth: 400,
-        margin: "50px auto",
-        padding: 30,
-        backgroundColor: "#ffffff",
-        borderRadius: 8,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h2 style={{ textAlign: "center", marginBottom: 20 }}>Sign Up</h2>
-
-      {error && (
-        <div
-          style={{
-            color: "red",
-            padding: 10,
-            border: "1px solid red",
-            borderRadius: 4,
-            marginBottom: 10,
-            backgroundColor: "#fff0f0",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div
-          style={{
-            color: "green",
-            padding: 10,
-            border: "1px solid green",
-            borderRadius: 4,
-            marginBottom: 10,
-            backgroundColor: "#f0fff0",
-          }}
-        >
-          {success}
-        </div>
-      )}
-
-      <form onSubmit={handleSignup}>
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Username
-          </label>
-          <input
-            type="text"
-            placeholder="Choose a username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Email
-          </label>
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Password
-          </label>
-          <input
-            type="password"
-            placeholder="Create a password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Roll Number
-          </label>
-          <input
-            type="text"
-            value={rollNumber}
-            onChange={(e) => setRollNumber(e.target.value)}
-            placeholder="Enter your roll number"
-            required
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: 15 }}>
-          <label style={{ display: "block", marginBottom: 5, fontWeight: 500 }}>
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            value={dateOfBirth}
-            onChange={(e) => setDateOfBirth(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 4,
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: 12,
-            backgroundColor: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            cursor: loading ? "not-allowed" : "pointer",
-            fontSize: "16px",
-            fontWeight: 500,
-            opacity: loading ? 0.7 : 1,
-          }}
-        >
-          {loading ? "Creating account..." : "Sign Up"}
-        </button>
-      </form>
-
-      {/* ✅ Link back to Login */}
-      <div
-        style={{
-          marginTop: 20,
-          textAlign: "center",
-          paddingTop: 15,
-          borderTop: "1px solid #eee",
-        }}
-      >
-        <p style={{ margin: 0, color: "#666" }}>
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            style={{
-              color: "#007bff",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
-          >
-            Log in
-          </Link>
+    <AuthLayout wide>
+      <div className="auth__title">
+        <p className="eyebrow">
+          <span className="eyebrow__no">№ 02</span>Student registration
+        </p>
+        <h1>Create your account.</h1>
+        <p>
+          We'll check your roll number and date of birth against the campus roster. Staff and lab assistants join by invitation instead.
         </p>
       </div>
-    </div>
+
+      {error && <Alert tone="error">{error}</Alert>}
+      {success && (
+        <Alert tone="success">
+          {success} <Link to={`/verify?email=${encodeURIComponent(email)}`}>Enter code now</Link>
+        </Alert>
+      )}
+
+      <form className="auth__form" onSubmit={handleSignup}>
+        <div className="field-row">
+          <TextField label="Roll number" icon={IdCard} value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} placeholder="Your roll number" required autoComplete="off" />
+          <TextField label="Date of birth" type="date" icon={CalendarDays} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required autoComplete="bday" />
+        </div>
+        <div className="field-row">
+          <TextField label="Username" icon={User} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Choose a username" required autoComplete="username" />
+          <TextField label="Email" type="email" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@campus.edu" required autoComplete="email" />
+        </div>
+        <PasswordField label="Password" showStrength autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" required />
+        <PasswordField
+          label="Confirm password"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Repeat your password"
+          required
+          error={mismatch ? "Passwords don't match yet." : undefined}
+        />
+        <Button type="submit" variant="primary" size="lg" block loading={loading} loadingText="Creating account…" disabled={Boolean(success)}>
+          Create account
+        </Button>
+      </form>
+
+      <p className="auth__alt">
+        Already registered? <Link to="/login">Log in</Link>
+      </p>
+    </AuthLayout>
   );
 };

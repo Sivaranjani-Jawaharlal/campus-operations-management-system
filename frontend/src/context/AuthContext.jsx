@@ -1,12 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as authApi from "../api/auth";
 import { getCurrentUser } from "../api/users";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./authState";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);   // true while a login/signup request is in flight
+  const [loading, setLoading] = useState(false); // true while a login/signup request is in flight
   const [authChecked, setAuthChecked] = useState(false); // true once the initial session check finishes
 
   useEffect(() => {
@@ -50,10 +49,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
 }

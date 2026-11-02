@@ -1,17 +1,29 @@
-import { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { LinkIcon, MailOpen } from "lucide-react";
 import { acceptInvitation } from "../api/auth";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import AuthLayout from "../components/layout/AuthLayout";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
+import { PasswordField } from "../components/ui/Field";
 
 export const AcceptInvitePage = () => {
+  useDocumentTitle("Accept invitation");
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
+  const timer = useRef(null);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,51 +42,58 @@ export const AcceptInvitePage = () => {
     setLoading(true);
     try {
       await acceptInvitation({ token, password });
-      setSuccess("Account created! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 2000);
+      setSuccess("Account created! Redirecting to log in…");
+      timer.current = setTimeout(() => navigate("/login", { state: { notice: "Your account is ready — log in to get started." } }), 1800);
     } catch (err) {
       setError(err.message || "This invite may have expired. Please ask an admin for a new one.");
-    } finally {
       setLoading(false);
     }
   };
 
+  if (!token) {
+    return (
+      <AuthLayout>
+        <div className="auth__title">
+          <span className="auth__badge auth__badge--danger">
+            <LinkIcon size={26} aria-hidden="true" />
+          </span>
+          <h1 style={{ marginTop: "var(--s-2)" }}>No invitation found.</h1>
+          <p>This link is missing its invite token. Please use the link from your invitation email.</p>
+        </div>
+        <Link to="/login" className="btn btn--lg btn--block">
+          Back to log in
+        </Link>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: 400, margin: "50px auto", padding: 30, backgroundColor: "#fff", borderRadius: 8, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
-      <h2 style={{ textAlign: "center", marginBottom: 20 }}>Accept Invitation</h2>
+    <AuthLayout>
+      <div className="auth__title">
+        <span className="auth__badge">
+          <MailOpen size={26} aria-hidden="true" />
+        </span>
+        <p className="eyebrow" style={{ marginTop: "var(--s-2)" }}>
+          <span className="eyebrow__no">№ 06</span>Invitation
+        </p>
+        <h1>You're invited.</h1>
+        <p>Choose a password to finish creating your account.</p>
+      </div>
 
-      {!token && <div style={errorBox}>No invite token found in the link. Please use the link from your email.</div>}
-      {error && <div style={errorBox}>{error}</div>}
-      {success && <div style={successBox}>{success}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
+      {success && <Alert tone="success">{success}</Alert>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 15 }}>
-          <label style={labelStyle}>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                 placeholder="Choose a password" required style={inputStyle} />
-        </div>
-        <div style={{ marginBottom: 15 }}>
-          <label style={labelStyle}>Confirm Password</label>
-          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                 placeholder="Confirm password" required style={inputStyle} />
-        </div>
-        <button type="submit" disabled={loading || !token} style={{
-          width: "100%", padding: 12, backgroundColor: "#007bff", color: "white",
-          border: "none", borderRadius: 4, cursor: loading || !token ? "not-allowed" : "pointer",
-          fontSize: 16, fontWeight: 500, opacity: loading || !token ? 0.7 : 1,
-        }}>
-          {loading ? "Creating account..." : "Accept & Create Account"}
-        </button>
+      <form className="auth__form" onSubmit={handleSubmit}>
+        <PasswordField label="Password" showStrength autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" required />
+        <PasswordField label="Confirm password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat your password" required error={mismatch ? "Passwords don't match yet." : undefined} />
+        <Button type="submit" variant="primary" size="lg" block loading={loading} loadingText="Creating account…" disabled={Boolean(success)}>
+          Accept &amp; create account
+        </Button>
       </form>
 
-      <div style={{ marginTop: 20, textAlign: "center", paddingTop: 15, borderTop: "1px solid #eee" }}>
-        <Link to="/login" style={{ color: "#6c757d", textDecoration: "none", fontSize: 14 }}>Back to Login</Link>
-      </div>
-    </div>
+      <p className="auth__alt">
+        <Link to="/login">Back to log in</Link>
+      </p>
+    </AuthLayout>
   );
 };
-
-const labelStyle = { display: "block", marginBottom: 5, fontWeight: 500 };
-const inputStyle = { width: "100%", padding: 10, borderRadius: 4, border: "1px solid #ccc", fontSize: 16 };
-const errorBox = { color: "red", padding: 10, border: "1px solid red", borderRadius: 4, marginBottom: 10, backgroundColor: "#fff0f0" };
-const successBox = { color: "green", padding: 10, border: "1px solid green", borderRadius: 4, marginBottom: 10, backgroundColor: "#f0fff0" };

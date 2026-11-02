@@ -10,3 +10,17 @@ export const ROLE_DASHBOARD_PATH = {
 export function dashboardPathForRole(role) {
   return ROLE_DASHBOARD_PATH[role] || "/login";
 }
+
+export const ROLE_LABELS = {
+  STUDENT: "Student",
+  STAFF: "Staff",
+  LAB_ASSISTANT: "Lab assistant",
+  ADMIN: "Administrator",
+};
+
+export function roleLabel(role) {
+  return ROLE_LABELS[role] || role || "";
+}
+
+// Roles that may publish announcements (mirrors SecurityConfiguration).
+export const ANNOUNCEMENT_AUTHOR_ROLES = ["STAFF", "ADMIN"];
